@@ -41,23 +41,21 @@ depending on a constant that suits 5 V logic and nothing else.
 
 Usage, with the capture started first and outliving the emitter:
 
-    ./ad3-capture.py --seconds 150 --out capture.npz
+    ad3-capture --seconds 150 --out capture.npz
     chrt -f 50 ./pulsetrain -trials 1000 -condition rt -out train.csv
     ./analyse-pulsetrain.py train.csv capture.npz
 
     # two channels: a TTL on CH1 and a photodiode behind a 10x probe on CH2
-    ./ad3-capture.py --channels 1,2 --seconds 30 \\
+    ad3-capture --channels 1,2 --seconds 30 \\
         --range 5,50 --offset 2.5,25 --attenuation 1,10 --out both.npz
 """
 
 import argparse
-import os
 import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from ad3 import AD3, falling_edges, rising_edges  # noqa: E402
+from ad3 import AD3, falling_edges, rising_edges
 
 
 def per_channel(spec, channels, name, cast=float):

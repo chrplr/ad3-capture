@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ad3-capture"
+version = "0.1.0"
+description = "Continuous two-channel capture and edge extraction on a Digilent Analog Discovery 3"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Christophe Pallier", email = "christophe@pallier.org" }]
+keywords = ["Analog Discovery 3", "Digilent", "WaveForms", "oscilloscope",
+            "timing", "photodiode", "psychophysics"]
+dependencies = ["numpy>=1.20"]
+
+[project.urls]
+Homepage = "https://github.com/chrplr/ad3-capture"
+
+[project.scripts]
+ad3-capture = "ad3_capture:main"
+
+[tool.setuptools]
+# Two flat modules, not a package directory: ad3.py is the library and
+# ad3_capture.py the CLI behind the `ad3-capture` command. libdwf (the WaveForms
+# SDK) is a system library loaded with ctypes, so it cannot be a dependency here
+# — see the README.
+py-modules = ["ad3", "ad3_capture"]
