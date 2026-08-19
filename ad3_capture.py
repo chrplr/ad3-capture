@@ -110,15 +110,21 @@ def main():
 
     print(f"  {stats['samples']} samples in {stats['seconds']:.2f} s")
 
-    # Loss is fatal, not a warning. Record mode drops samples when the host
-    # stops draining, and a capture with holes has them wherever the host was
-    # busiest -- which is exactly where the interesting trials are.
-    if stats["lost"] or stats["corrupted"]:
-        sys.exit(f"  {stats['lost']} lost, {stats['corrupted']} corrupted: the "
-                 f"capture has holes in it. Lower --rate and re-run.")
-
+    # Loss is fatal -- but AFTER the file is written, not instead of it.
+    #
+    # A capture with holes has them wherever the host was busiest, which is
+    # exactly where the interesting trials are, so it must not be analysed as if
+    # it were sound. But exiting here threw away the recording, and the
+    # recording is the expensive, unrepeatable half: the emitter has finished
+    # its run by the time this code executes. Losing both to a single dropped
+    # sample is the wrong trade, especially when the capture shares a machine
+    # with a real-time stimulus program.
+    #
+    # So the counts travel in the file, the analysis side refuses a file that
+    # carries them, and the exit status still says the capture is bad.
     out = {"rate": args.rate, "channels": np.array([c + 1 for c in chans]),
-           "seconds": stats["seconds"], "samples": stats["samples"]}
+           "seconds": stats["seconds"], "samples": stats["samples"],
+           "lost": stats["lost"], "corrupted": stats["corrupted"]}
     total_rise = 0
     for ch in chans:
         kw = dict(range_v=applied_r[ch], offset_v=applied_o[ch])
@@ -168,6 +174,14 @@ def main():
     # expensive, unrepeatable part and the edges are derived from it.
     np.savez_compressed(args.out, **out)
     print(f"\n  wrote {args.out}")
+
+    if stats["lost"] or stats["corrupted"]:
+        sys.exit(f"  {stats['lost']} lost, {stats['corrupted']} corrupted: the "
+                 f"capture has holes in it, wherever the host was busiest.\n"
+                 f"  It was saved to {args.out} anyway, and records the counts, so "
+                 f"nothing analyses it by accident.\n"
+                 f"  Lower --rate, or move the capture off the machine under test, "
+                 f"and re-run.")
 
     if total_rise == 0:
         sys.exit("  no rising edge on any channel: check the wiring, the probe "
